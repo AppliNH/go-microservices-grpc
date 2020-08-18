@@ -13,7 +13,6 @@ func main() {
 
 	a := os.Args
 	if len(a) == 2 {
-
 		switch a[1] {
 		case "greet_server":
 			greet_server.StartServer()

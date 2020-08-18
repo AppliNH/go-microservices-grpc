@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"time"
 
 	"google.golang.org/grpc"
 )
@@ -19,8 +20,9 @@ func StartClient() {
 
 	c := calculatorpb.NewCalculatorServiceClient(conn)
 
-	doUnary(c)
-	doServerStreaming(c)
+	//doUnary(c)
+	//doServerStreaming(c)
+	doClientStreaming(c)
 
 }
 func doUnary(c calculatorpb.CalculatorServiceClient) {
@@ -57,5 +59,36 @@ func doServerStreaming(c calculatorpb.CalculatorServiceClient) {
 		}
 		log.Printf("%v", msg.GetPrimeNumber())
 	}
+
+}
+func doClientStreaming(c calculatorpb.CalculatorServiceClient) {
+	fmt.Println("Starting client streaming")
+
+	stream, err := c.ComputeAverage(context.Background())
+	if err != nil {
+		log.Fatalf("Error while calling ComputeAverage %v", err)
+	}
+
+	req := []*calculatorpb.ComputeAverageRequest{
+		{
+			Number: 5,
+		},
+		{
+			Number: 2,
+		},
+		{
+			Number: 1,
+		},
+	}
+
+	for _, v := range req {
+		stream.Send(v)
+		time.Sleep(500 * time.Millisecond)
+	}
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Fatalf("Error while receiving from server %v", err)
+	}
+	fmt.Printf("ComputeAverage response: %v", res.Average)
 
 }

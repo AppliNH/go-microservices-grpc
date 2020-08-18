@@ -23,6 +23,13 @@ message PrimeNumberDecompositionResponse {
     int64 prime_number = 1;
 }
 
+message ComputeAverageRequest {
+    int64 number = 1;
+}
+
+message ComputeAverageResponse {
+    double average = 1;
+}
 
 service CalculatorService{
     // unary
@@ -30,6 +37,9 @@ service CalculatorService{
 
     // server streaming
     rpc PrimeNumberDecomposition(PrimeNumberDecompositionRequest) returns (stream PrimeNumberDecompositionResponse) {};
+
+    // client streaming
+    rpc ComputeAverage(stream ComputeAverageRequest) returns (ComputeAverageResponse) {};
 }
 
 

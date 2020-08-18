@@ -3,6 +3,7 @@ package greet_server
 import (
 	"applinh/gogrpcudemy/greet/greetpb"
 	"context"
+	"io"
 	"log"
 	"net"
 	"strconv"
@@ -43,6 +44,28 @@ func (*server) GreetManyTimes(req *greetpb.GreetManyTimesRequest, stream greetpb
 		time.Sleep(1000 * time.Millisecond) // Sleep 1 second
 	}
 	return nil
+}
+
+func (*server) LongGreet(stream greetpb.GreetService_LongGreetServer) error {
+	log.Printf("LongGreet stream invoked with a streaming request \n")
+	result := "Hello "
+	for {
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			// finished reading client stream
+			return stream.SendAndClose(&greetpb.LongGreetResponse{
+				Result: result,
+			})
+		}
+		if err != nil {
+			log.Fatalf("Error while reading client stream %v \n", err)
+		}
+		first_name := msg.GetGreeting().GetFirstName()
+		last_name := msg.GetGreeting().GetLastName()
+
+		result += first_name + " " + last_name + ", "
+
+	}
 }
 
 func StartServer() {

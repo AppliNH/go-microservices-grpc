@@ -3,6 +3,7 @@ package calculator_server
 import (
 	"applinh/gogrpcudemy/calculator/calculatorpb"
 	"context"
+	"io"
 	"log"
 	"net"
 
@@ -48,6 +49,32 @@ func (*server) PrimeNumberDecomposition(req *calculatorpb.PrimeNumberDecompositi
 
 	}
 	return nil
+}
+
+func (*server) ComputeAverage(stream calculatorpb.CalculatorService_ComputeAverageServer) error {
+	log.Printf("ComputeAverage stream invoked with a streaming request \n")
+	numbers := []int64{}
+	var average float64
+	var sum int64
+	for {
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			// finished reading client stream
+
+			for _, n := range numbers {
+				sum += n
+			}
+			average = float64(sum) / float64(int64(len(numbers)))
+			return stream.SendAndClose(&calculatorpb.ComputeAverageResponse{
+				Average: average,
+			})
+		}
+		if err != nil {
+			log.Fatalf("Error while reading client stream %v \n", err)
+		}
+		numbers = append(numbers, msg.GetNumber())
+
+	}
 }
 
 func StartServer() {
