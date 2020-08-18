@@ -11,6 +11,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 )
 
@@ -124,6 +125,7 @@ func (*server) SquareRoot(ctx context.Context, req *calculatorpb.SquareRootReque
 	}, nil
 }
 
+//-------------------------------------------
 func StartServer() {
 	lis, err := net.Listen("tcp", "0.0.0.0:50051")
 
@@ -133,6 +135,7 @@ func StartServer() {
 
 	s := grpc.NewServer()
 	calculatorpb.RegisterCalculatorServiceServer(s, &server{})
+	reflection.Register(s) // allows us to expose the gRPC server so the client can see what's available. You can use Evans CLI for that
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v", err)

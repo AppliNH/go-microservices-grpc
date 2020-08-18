@@ -122,7 +122,7 @@ func (*server) GreetWithDeadline(ctx context.Context, req *greetpb.GreetWithDead
 //-----------------------------------------------------------------
 
 func StartServer() {
-	lis, err := net.Listen("tcp", "0.0.0.0:50051")
+	lis, err := net.Listen("tcp", "0.0.0.0:50052")
 	if err != nil {
 		log.Fatalf("Failed to listen %v \n", err)
 	}

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"applinh/gogrpcudemy/blog/blog_client"
+	"applinh/gogrpcudemy/blog/blog_server"
 	"applinh/gogrpcudemy/calculator/calculator_client"
 	"applinh/gogrpcudemy/calculator/calculator_server"
 	"applinh/gogrpcudemy/greet/greet_client"
@@ -22,6 +24,10 @@ func main() {
 			calculator_server.StartServer()
 		case "calculator_client":
 			calculator_client.StartClient()
+		case "blog_server":
+			blog_server.StartServer()
+		case "blog_client":
+			blog_client.StartClient()
 		default:
 			fmt.Println("Service not found.")
 		}
