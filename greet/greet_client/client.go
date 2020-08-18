@@ -9,10 +9,25 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 )
 
 func StartClient() {
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+
+	opts := grpc.WithInsecure()
+	tls := false
+	if tls {
+		certFile := "ssl/ca.crt"
+		creds, sslErr := credentials.NewClientTLSFromFile(certFile, "localhost")
+		if sslErr != nil {
+			log.Fatalf("Failed loading certificates: %v", sslErr)
+		}
+		opts = grpc.WithTransportCredentials(creds)
+	}
+
+	conn, err := grpc.Dial("localhost:50051", opts)
 	if err != nil {
 		log.Fatalf("Failed to connect %v \n", err)
 	}
@@ -20,13 +35,16 @@ func StartClient() {
 
 	c := greetpb.NewGreetServiceClient(conn)
 
-	// doUnary(c)
+	doUnary(c)
 	// doServerStreaming(c)
 	// doClientStreaming(c)
-	doBiDrectStreaming(c)
+	// doBiDrectStreaming(c)
+	//doUnaryDeadline(c, 5*time.Second) // will complete
+	//doUnaryDeadline(c, 1*time.Second) // will fail
 
 }
 
+//------------------------------------------
 func doUnary(c greetpb.GreetServiceClient) {
 	fmt.Println("Starting unary...")
 	req := &greetpb.GreetRequest{
@@ -172,5 +190,34 @@ func doBiDrectStreaming(c greetpb.GreetServiceClient) {
 
 	// block until everything is done
 	<-waitChan
+
+}
+func doUnaryDeadline(c greetpb.GreetServiceClient, timeout time.Duration) {
+	fmt.Println("Starting unary with deadline...")
+	req := &greetpb.GreetWithDeadlineRequest{
+		Greeting: &greetpb.Greeting{
+			FirstName: "Thomas",
+			LastName:  "Martin",
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	res, err := c.GreetWithDeadline(ctx, req)
+	if err != nil {
+
+		if statusErr, ok := status.FromError(err); ok {
+			if statusErr.Code() == codes.DeadlineExceeded {
+				log.Println("Deadline exceeded.")
+			} else {
+				log.Printf("Unexepected error: %v", err)
+			}
+		} else {
+			log.Fatalf("Error while calling GreetWithDeadlineRequest %v \n", err)
+		}
+		return
+	}
+	log.Printf("Response from GreetWithDeadlineRequest: %v \n", res.Result)
 
 }
