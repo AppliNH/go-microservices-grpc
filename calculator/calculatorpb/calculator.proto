@@ -1,0 +1,37 @@
+// protoc calculator/calculatorpb/calculator.proto --go_out=plugins=grpc:.
+
+syntax = "proto3";
+
+package calculator;
+
+option go_package ="calculator/calculatorpb";
+
+
+message SumRequest {
+    int64 a = 1;
+    int64 b = 2;
+}
+
+message SumResponse {
+    int64 result = 1;
+}
+
+message PrimeNumberDecompositionRequest {
+    int64 number = 1;
+}
+message PrimeNumberDecompositionResponse {
+    int64 prime_number = 1;
+}
+
+
+service CalculatorService{
+    // unary
+    rpc Sum(SumRequest) returns (SumResponse) {};
+
+    // server streaming
+    rpc PrimeNumberDecomposition(PrimeNumberDecompositionRequest) returns (stream PrimeNumberDecompositionResponse) {};
+}
+
+
+
+
