@@ -3,11 +3,15 @@ package calculator_server
 import (
 	"applinh/gogrpcudemy/calculator/calculatorpb"
 	"context"
+	"fmt"
 	"io"
 	"log"
+	"math"
 	"net"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type server struct{}
@@ -75,6 +79,49 @@ func (*server) ComputeAverage(stream calculatorpb.CalculatorService_ComputeAvera
 		numbers = append(numbers, msg.GetNumber())
 
 	}
+}
+
+func (*server) FindMaximum(stream calculatorpb.CalculatorService_FindMaximumServer) error {
+	log.Printf("FindMaximum stream invoked with a bi-di streaming request \n")
+
+	var maxNumber int64
+
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			log.Fatalf("Error occured on reading clientStream %v", err)
+			return err
+		}
+		number := req.GetNumber()
+		if number > maxNumber {
+			maxNumber = number
+		}
+
+		err = stream.Send(&calculatorpb.FindMaximumResponse{
+			Result: maxNumber,
+		})
+		if err != nil {
+			log.Fatalf("Error when streaming data to client %v", err)
+			return err
+		}
+	}
+}
+
+func (*server) SquareRoot(ctx context.Context, req *calculatorpb.SquareRootRequest) (*calculatorpb.SquareRootResponse, error) {
+	fmt.Println("SquareRoot unary")
+
+	number := req.GetNumber()
+
+	if number < 0 {
+		return nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("Received a negative number: %v", number))
+	}
+
+	return &calculatorpb.SquareRootResponse{
+		NumberRoot: math.Sqrt(float64(number)),
+	}, nil
 }
 
 func StartServer() {
