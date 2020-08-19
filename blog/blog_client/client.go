@@ -4,6 +4,7 @@ import (
 	"applinh/gogrpcudemy/blog/blogpb"
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"strings"
 
@@ -50,5 +51,51 @@ func StartClient() {
 	}
 
 	fmt.Printf("Blog: %v \n", resRead.GetBlog())
+
+	fmt.Println(strings.Repeat("_", 25))
+	// Update blog
+
+	updatedBlog := &blogpb.Blog{
+		Id:       blogId,
+		AuthorId: "AppliNH2",
+		Title:    "Another one",
+		Content:  "Content has changed too",
+	}
+	resUpdate, err := c.UpdateBlog(context.Background(), &blogpb.UpdateBlogRequest{Blog: updatedBlog})
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	fmt.Printf("Successfully updated this blog: %v \n", resUpdate.GetBlog())
+
+	fmt.Println(strings.Repeat("_", 25))
+	// Delete blog
+
+	resDelete, err := c.DeleteBlog(context.Background(), &blogpb.DeleteBlogRequest{BlogId: blogId})
+
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	fmt.Printf("Successfully deleted this blog: %v \n", resDelete.GetBlogId())
+
+	fmt.Println(strings.Repeat("_", 25))
+	// List blogs
+
+	resList, err := c.ListBlog(context.Background(), &blogpb.ListBlogRequest{})
+
+	for {
+		req, err := resList.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("Error occured on reading clientStream %v", err)
+			break
+		}
+		blog := req.GetBlog()
+
+		fmt.Printf("| Blog: %v \n", blog)
+	}
 
 }

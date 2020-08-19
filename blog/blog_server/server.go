@@ -67,7 +67,10 @@ func (*server) ReadBlog(ctx context.Context, req *blogpb.ReadBlogRequest) (*blog
 	oid, err := primitive.ObjectIDFromHex(blogId)
 	if err != nil {
 		//log.Fatalf("Error while converting: %v", err)
-		return nil, err
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			fmt.Sprint("Cannot parse ID"),
+		)
 	}
 
 	data := &models.BlogItem{}
@@ -88,6 +91,121 @@ func (*server) ReadBlog(ctx context.Context, req *blogpb.ReadBlogRequest) (*blog
 			Content:  data.Content,
 		},
 	}, nil
+}
+
+func (*server) UpdateBlog(ctx context.Context, req *blogpb.UpdateBlogRequest) (*blogpb.UpdateBlogResponse, error) {
+	blog := req.GetBlog()
+
+	oid, err := primitive.ObjectIDFromHex(blog.GetId())
+	if err != nil {
+		//log.Fatalf("Error while converting: %v", err)
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			fmt.Sprint("Cannot parse ID"),
+		)
+	}
+	data := &models.BlogItem{}
+	filter := bson.M{"_id": oid}
+
+	update := bson.M{
+		"$set": blog,
+	}
+
+	res := collection.FindOneAndUpdate(context.Background(), filter, update)
+	if res.Err() != nil {
+		return nil, status.Errorf(
+			codes.NotFound,
+			fmt.Sprintf("Cannot find blog %v. Error: %v", blog.GetId(), res.Err()),
+		)
+	}
+	res.Decode(data)
+
+	return &blogpb.UpdateBlogResponse{
+		Blog: &blogpb.Blog{
+			Id:       data.ID.Hex(),
+			AuthorId: data.AuthorID,
+			Title:    data.Title,
+			Content:  data.Content,
+		},
+	}, nil
+
+}
+
+func (*server) DeleteBlog(ctx context.Context, req *blogpb.DeleteBlogRequest) (*blogpb.DeleteBlogResponse, error) {
+	blogId := req.GetBlogId()
+
+	oid, err := primitive.ObjectIDFromHex(blogId)
+	if err != nil {
+		//log.Fatalf("Error while converting: %v", err)
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			fmt.Sprint("Cannot parse ID"),
+		)
+	}
+	filter := bson.M{"_id": oid}
+
+	res, err := collection.DeleteOne(context.Background(), filter)
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("Internal error: %v", err),
+		)
+	}
+
+	if res.DeletedCount == 0 { // Not found
+		return nil, status.Errorf(
+			codes.NotFound,
+			fmt.Sprintf("Cannot find blog %v", blogId),
+		)
+
+	}
+
+	return &blogpb.DeleteBlogResponse{
+		BlogId: blogId,
+	}, nil
+
+}
+
+func (*server) ListBlog(req *blogpb.ListBlogRequest, stream blogpb.BlogService_ListBlogServer) error {
+
+	cursor, err := collection.Find(context.Background(), bson.M{})
+	if err != nil {
+		return status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("Internal error: %v", err),
+		)
+	}
+
+	defer cursor.Close(context.Background())
+	for cursor.Next(context.Background()) {
+		data := &models.BlogItem{}
+		err := cursor.Decode(data)
+		if err != nil {
+			return status.Errorf(
+				codes.Internal,
+				fmt.Sprintf("Internal error: %v", err),
+			)
+		}
+		stream.Send(&blogpb.ListBlogResponse{
+			Blog: &blogpb.Blog{
+				Id:       data.ID.Hex(),
+				AuthorId: data.AuthorID,
+				Title:    data.Title,
+				Content:  data.Content,
+			},
+		})
+		time.Sleep(time.Second)
+
+	}
+	if cursor.Err() != nil {
+		return status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("Internal error: %v", err),
+		)
+	}
+
+	return nil
+
 }
 
 //-----------------------------------------------------------------
