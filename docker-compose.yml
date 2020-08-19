@@ -3,6 +3,8 @@ version: '3.8'
 services:
   gogrpc:
     build: .
+    environment:
+      MONGO_HOSTNAME: mongo
     ports:
       - 50051:50051
       - 50052:50052

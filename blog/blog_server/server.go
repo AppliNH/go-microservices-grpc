@@ -218,7 +218,9 @@ var client *mongo.Client
 func setupMongoDB() error {
 	var err error
 	fmt.Println("Connecting to MongoDB...")
-	client, err = mongo.NewClient(options.Client().ApplyURI("mongodb://mongo:27017"))
+	MONGO_HOSTNAME := "localhost"
+	MONGO_HOSTNAME = os.Getenv("MONGO_HOSTNAME")
+	client, err = mongo.NewClient(options.Client().ApplyURI("mongodb://" + MONGO_HOSTNAME + ":27017"))
 	if err != nil {
 		return err
 	}
