@@ -11,8 +11,8 @@ RUN go mod download
 COPY . .
 
 # Build the Go app
-RUN go build -o grpc_services .
+RUN go build -o gogrpc .
 
 EXPOSE 50051 50052 50053
 
-CMD ["./grpc_services"]
+CMD ["./gogrpc" ,"all_servers"]

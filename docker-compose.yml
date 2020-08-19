@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  gogrpc:
+    build: .
+    ports:
+      - 50051:50051
+      - 50052:50052
+      - 50053:50053
+    networks:
+      - main_network
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo
+    ports:
+      - 27017:27017
+    networks:
+      - main_network
+    volumes:
+      - mongodbdata:/data/db
+
+networks:
+  main_network:
+
+volumes: 
+  mongodbdata:

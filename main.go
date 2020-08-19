@@ -28,6 +28,10 @@ func main() {
 			blog_server.StartServer()
 		case "blog_client":
 			blog_client.StartClient()
+		case "all_servers":
+			go greet_server.StartServer()
+			go calculator_server.StartServer()
+			blog_server.StartServer()
 		default:
 			fmt.Println("Service not found.")
 		}
